@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/moore3071/git-sandbox#readme",
   "dependencies": {
-    "metalsmith": "^2.2.0"
+    "jasmine": "^2.4.1"
   }
 }

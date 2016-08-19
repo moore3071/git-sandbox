@@ -18,5 +18,9 @@
   "homepage": "https://github.com/moore3071/git-sandbox#readme",
   "dependencies": {
     "jasmine": "^2.4.1"
+  },
+  "devDependencies": {
+    "node-sass": "^3.8.0",
+    "nodemon": "^1.10.2"
   }
 }

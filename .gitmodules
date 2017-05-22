@@ -1,3 +1,6 @@
 [submodule "josh.js"]
-	path = josh.js
+	path = src/josh.js
 	url = https://github.com/sdether/josh.js
+[submodule "gitgraph"]
+	path = src/gitgraph
+	url = https://github.com/nicoespeon/gitgraph.js.git

@@ -4,23 +4,30 @@
   "description": "A sandbox in which to learn the basics of git",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "preinstall": "git submodule update --init --recursive",
+    "tests": "echo \"Error: no test specified\" && exit 0",
+    "test": "npm run lint && npm run unittests",
+    "lint": "jshint src/js/* || true",
+    "unittests": "jasmine"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/moore3071/git-sandbox.git"
   },
-  "author": "",
+  "author": "moore3071",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/moore3071/git-sandbox/issues"
   },
   "homepage": "https://github.com/moore3071/git-sandbox#readme",
   "dependencies": {
-    "jasmine": "^2.4.1"
+    "harp": "^0.23.0"
   },
   "devDependencies": {
+    "browserify": "^14.3.0",
+    "jasmine": "^2.4.1",
+    "jsdoc": "^3.4.3",
     "node-sass": "^3.8.0",
-    "nodemon": "^1.10.2"
+    "sha1": "^1.1.1"
   }
 }

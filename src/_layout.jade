@@ -1,0 +1,76 @@
+doctype
+html
+
+  head
+
+    link(rel="stylesheet" href="/css/main.css")
+
+    //Third party requirements
+    script(src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js")
+    script(src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.min.js")
+    script(src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.2/underscore-min.js")
+
+    //Main josh.js scripts
+    //-script Josh = {Debug: true };
+    script(src="/josh.js/js/history.js")
+    script(src="/josh.js/js/killring.js")
+    script(src="/josh.js/js/readline.js")
+    script(src="/josh.js/js/input.js")
+    script(src="/josh.js/js/shell.js")
+    script(src="/josh.js/js/pathhandler.js")
+
+    //gitgraph components
+    script(src="/js/gitgraph.js")
+    link(href="/css/gitgraph.css", rel="stylesheet")
+
+  body
+
+    //Yield should be purely JS containing the repo info
+    != yield
+
+    //Filled by JS based on settings
+    div#notification
+
+    //Should allow navigating to any
+    //other page
+    div#navigation
+
+    //Contain the settings
+    div#settings
+      h3 settings
+      details
+        summary Notifications
+        div.setting-container
+          input(type="checkbox")
+          | Notifications
+        div.setting-container
+          input(type="checkbox")
+          | Object creation
+        div.setting-container
+          input(type="checkbox")
+          | Merge conflicts
+        div.setting-container
+          input(type="checkbox")
+          | Remote changes
+        div.setting-container
+          input(type="checkbox")
+          | errors
+      details
+        summary Setup
+        div.setting-container
+          input(type="checkbox")
+          | multiple remotes
+
+    //TODO change to dynamically load
+    //the remotes from JSON
+    canvas#gitGraph
+    canvas#localGraph
+
+    //terminal divs
+    div#shell-panel
+      div#shell-view
+
+    //Make the terminal with josh.js
+    script(src="/js/terminal.js")
+    //Make the necessary instances of gitgraphs
+    script(src="/js/graph.js")

@@ -4,8 +4,9 @@
     "**/*[sS]pec.js"
   ],
   "helpers": [
-    "helpers/**/*.js"
+    "helpers/**/*.js",
+    "../src/js/filesystem.js"
   ],
   "stopSpecOnExpectationFailure": false,
-  "random": false
+  "random": true
 }

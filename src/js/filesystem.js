@@ -10,7 +10,7 @@ function File(name) {
 	if(typeof(name)!=='string') {
 		throw new Error("File name must be a string");
 	}
-	this.name = name;
+	this.name = name
 	this.content = null;
 }
 File.prototype = {

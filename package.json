@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "preinstall": "git submodule update --init --recursive",
-    "tests": "echo \"Error: no test specified\" && exit 0",
-    "test": "npm run lint && npm run unittests",
-    "lint": "jshint src/js/* || true",
+    "test": "npm run lint; npm run unittests",
+    "lint": "jshint src/js/*",
     "unittests": "jasmine",
-    "serve": "cd src; harp server",
-    "server": "npm run serve"
+    "serve": "harp server src",
+    "server": "npm run serve",
+    "build": "harp compile src build"
   },
   "repository": {
     "type": "git",

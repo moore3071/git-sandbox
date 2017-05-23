@@ -8,7 +8,9 @@
     "tests": "echo \"Error: no test specified\" && exit 0",
     "test": "npm run lint && npm run unittests",
     "lint": "jshint src/js/* || true",
-    "unittests": "jasmine"
+    "unittests": "jasmine",
+    "serve": "cd src; harp server",
+    "server": "npm run serve"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
     "browserify": "^14.3.0",
     "jasmine": "^2.4.1",
     "jsdoc": "^3.4.3",
+    "jshint": "^2.9.4",
     "node-sass": "^3.8.0",
     "sha1": "^1.1.1"
   }

@@ -30,10 +30,16 @@ File.prototype = {
 function Directory(name, parent_dir) {
 	if(typeof(name)!=='string')
 		throw new Error('Directory name must be a string');
-	if(parent_dir!==undefined && typeof(parent_dir)!==typeof(this))
+
+	if(parent_dir===undefined || parent_dir instanceof Directory) {
+		if(parent_dir instanceof Directory) {
+			this.parent = parent_dir;
+			parent_dir.add(this);
+		}
+	} else {
 		throw new Error('Directory parent must be a directory');
+	}
 	this.name = name;
-	this.parent = parent_dir;
 	this.content = new Map();
 }
 
@@ -217,13 +223,11 @@ Commit.prototype.hash = function() {
 	return sha1(contentsHash);
 };
 
-
-//XXX
 /** Make a git remote consisting of a graph and git objects
  * @param {GitGraph} gitgraph a gitgraph object to draw this remote on
  * @param {Array.<string,commit>} [branch_tips] a list of branch names and commits
  * usually taken as Array.from(GitRemote.branches)
- * @returns a GitRemote object
+ * @returns {GitRemote} a GitRemote object
  */
 function GitRemote(gitgraph, branch_tips) {
 	this.graph = gitgraph;
@@ -233,7 +237,7 @@ function GitRemote(gitgraph, branch_tips) {
 }
 GitRemote.prototype = {
 	branches: new Map(),
-	//FIXME finish
+	//TODO finish
 	/** Load in history from a commit, also can be used to update a branch
 	 * @param {Commit} head the commit to load history from
 	 * @param {string} branchname the name of the branch
@@ -245,56 +249,115 @@ GitRemote.prototype = {
 
 		this.branches.set(branchname, head);
 	},
+	/** Check if this remote contains a commit with the specified hash
+	 * @param {string} hash the hash of the commit in question
+	 * @returns {Commit|undefined} a commit with the specified hash
+	 * or undefined if nothing was found.
+	 */
 	hasCommit: function(hash) {
-		
+		function searchCommit(commit, hash) {
+			if(commit instanceof Commit) {
+				if(commit.hash() === hash)
+					return commit;
+				if(commit.parent instanceof Commit)
+					return searchCommit(commit, hash);
+			}
+		}
+		for(var i in this.branches) {
+			var tmp = searchCommit(i, hash);
+			if(tmp !== undefined)
+				return tmp;
+		}
 	}
 };
 
-
+/** A git remote with a filesystem
+ * @param {Object} fs_children a representation of the file structure with file
+ *  names as keys. They optional can include the single key 'content' to make 
+ *  that root object a file with the given content.
+ *  @param {Gitgraph} A gitgraph item to draw the remote on
+ *  @returns {GitFileSystem}
+ */
 function GitFileSystem(fs_children, gitgraph) {
-	this.root = new Directory('', null);
+	function buildfs(root, fs) {
+		for (var i in fs) {
+			var tmp;
+			if(fs[i].content && Object.keys(fs.i).length ===1) {
+				tmp = new File(i);
+				tmp.setContent(fs[i].content);
+				root.add(tmp);
+			} else if(typeof(fs[i])===Object){
+				tmp = new Directory(i,root);
+				buildfs(tmp,fs[i]);
+			}
+		}
+	}
+
+	this.root = new Directory('');
 	this.root.path = '/';
 	this.remotes = new Map();
 
 	if (fs_children !== undefined) {
-		//TODO
-		function buildfs(root, fs) {
-			for (var i in Object.keys(fs)) {
-				
-			}
-		}
+		buildfs(this.root, fs_children);
 	}
 }
 GitFileSystem.prototype = Object.create(GitRemote.prototype);
 
-GitFileSystem.prototype.newRemote = function(old_remote, remote_name) {
+//TODO Fix me
+/** make a new remote with the given name
+ * @params {string} remote_name name of the remote in this GitFileSystem
+ */
+GitFileSystem.prototype.newRemote = function(remote_name, old_remote) {
 	var copied_remote = typeof(old_remote) === undefined ? this : old_remote;
 	if (!(remote_name in this.remotes)) {
 		this.remotes[remote_name] = copied_remote;
-		return true;
 	} else {
-		try {
-			throw new Error('Git Remote: Tried to add a remote '+
-				'with an existing name');
-		} catch(e) {
-			console.log(e.name + ': ' + e.message);
-		}
+		throw new Error('Git Remote: Tried to add a remote '+
+			'with an existing name');
 	}
-	return false;
 };
+/** Remove a remote from the list of remotes
+ * @params {string} remote_name name of the remote to remove
+ */
 GitFileSystem.prototype.removeRemote = function(remote_name) {
-	if (remote_name in this.graphs) {
+	if (remote_name in this.remotes) {
 		delete this.remotes.remote_name;
-		return true;
 	} else {
-		try {
-			throw new Error('Git Remote: Tried to remove a non-'+
-				'existing remote from list of remotes');
-		} catch(e) {
-			console.log(e.name + ': ' + e.message);
+		throw new Error('Git Remote: Tried to remove a non-'+
+			'existing remote from list of remotes');
+	}
+};
+
+/** needed by pathhandler for cd and ls, this function gets the node (file or 
+ * directory) mentioned by path and runs callback with it.
+ */
+GitFileSystem.prototype.getNode = function(path, callback) {
+	if(!path) {
+		callback(pathhandler.current);
+	}
+	var target = path[0]=='/'?this.root:pathhandler.current;
+	var splitpath = path.split('/');
+	for (var i in splitpath) {
+		if(i=='..') {
+			if(target.parent) {
+				target = target.parent;
+			} else {
+				return callback();
+			}
+		} else if(i=='.') {
+			//do nothing
+		} else if(target.content.has(i)) {
+			target = target.content.get(i);
+		} else {
+			return callback();
 		}
 	}
-	return false;
+	return callback(target);
+};
+/** needed by pathhandler, this function returns a node's children
+ */
+GitFileSystem.prototype.getChildNodes = function(node, callback) {
+	return callback(node.content.values());
 };
 
 exports.File = File;

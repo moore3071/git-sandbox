@@ -111,9 +111,9 @@ function git_help(command, args, callback) {
 	}
 }
 function git_unknown(callback) {
-	callback("Unknown command. It's possible this is an actual command in Git, in which '
-		+'case feel free to make a PR adding it. If you are looking for a list of '+
-		'supported commands, then run `git help`');
+	callback("Unknown command. It's possible this is an actual command in Git, in which "+
+		"case feel free to make a PR adding it. If you are looking for a list of "+
+		"supported commands, then run `git help`");
 }
 
 shell.activate();

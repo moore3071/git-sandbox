@@ -17,7 +17,11 @@ File.prototype = {
 	/** Set the content of a file to the input string
 	 * @param {string} content the content to set
 	 */
-	setContent: function(content) { this.content = content; }
+	setContent: function(content) { this.content = content; },
+	/** Get a blob that represents this file's contents
+	 * @returns {Blob} A blob representing this.content
+	 */
+	makeBlob: function() { return new Blob(this.content); }
 };
 
 /**Directories have a name and parent. Content consists of a map of
@@ -47,20 +51,27 @@ Directory.prototype = {
 
 	/** Add a file to the contents of this directory. Accepts a file object
 	 * or a name for a new File.
-	 * @param {string|File|Directory} file the file to be added to this
+	 * @param {string|File|Directory|Blob|Commit} file the file to be added to this
 	 * directory
 	 * @throws errors if the input isn't the correct type or content with
 	 * this name already exists
 	 */
 	add: function(file) {
-		if (typeof(file)===String) {
+		if (typeof(file)==='string') {
 			file = new File(file);
 		}
-		if (file instanceof Directory || file instanceof File || file instanceof Tree) {
+		if (file instanceof Directory || file instanceof File) {
 			if (this.content.has(file.name)) {
 				throw new Error('A file with this name already exists');
 			} else {
 				this.content.set(file.name, file);
+			}
+		} else if(file instanceof Tree || file instanceof Blob || file instanceof Commit) {
+			//File names for blobs, commits, etc, are their hash
+			if (this.content.has(file.hash)) {
+				throw new Error('A file with this hash already exists');
+			} else {
+				this.content.set(file.hash, file);
 			}
 		} else {
 			throw new Error('Only files may be adding to directories');
@@ -76,45 +87,57 @@ Directory.prototype = {
 		} else {
 			throw new Error('cannot remove a nonexisting file');
 		}
-	}
+	},
+	/** Make a tree from this directory
+	 * @returns {Tree} A tree representing this directory
+	 */
+	makeTree: function() {
 
+	}
 };
 
 /** Blobs are like files except they have a hash stored with them. Note that in
  * this implementation blobs' contents are stored as is and no deltas are used.
  * This is meant to be a useable guide and not an honest Git re-implementation
- * @param {string} name the name of the blob
- * @returns {Blob} A blob object with name of name
+ * @param {string} [content=null] the content of the blob
+ * @returns {Blob} A blob object with the specified content
  */
-function Blob(name) {
-	File.call(this, name);
+function Blob(content) {
+	if(content!==undefined && typeof(content)!=='string') {
+		throw new Error("Blobs can only be constructed with strings");
+	}
+	this.content = content;
+	this.hash();
 }
-Blob.prototype = Object.create(File.prototype);
 /** Copy a blob recursively so remotes don't interact with the blobs of others
  * @returns {Blob} A blob identical to this
  */
 Blob.prototype.copy = function() {
-	var result = new Blob(this.name);
-	result.content = this.content;
-	return result;
+	return new Blob(this.content);
+};
+/** Copy a blob if it doesn't already exist in a remote, otherwise return the existing remote
+ * @param {Map} obj_list a map of objects from a remote
+ * @returns {Blob} A Blob identical to this
+ */
+Blob.prototype.applyToRemote = function(obj_list) {
+	if(obj_list.has(this.hash)) {
+		return obj_list.get(this.hash);
+	} else {
+		return this.copy();
+	}
 };
 /** Return a hash of the blob using sha1.
  * @returns {string} hash of the object
  */
 Blob.prototype.hash = function() {
-	return sha1('blob: '+this.name+' '+this.content);
+	return sha1('blob: '+this.content);
 };
 
 /** Trees are like directories except they accept blobs or trees as children and
  * don't have parents.
- * @param {string} name the name of the Tree
- * @returns {Tree} A tree with name of name
+ * @returns {Tree} A new tree
  */
-function Tree(name) {
-	if(typeof(name)!=='string') {
-		throw new Error("File name must be a string");
-	}
-	this.name = name;
+function Tree() {
 	this.content = new Map();
 }
 Tree.prototype = {
@@ -122,29 +145,50 @@ Tree.prototype = {
 	 * @returns {Tree} A tree identical to this
 	 */
 	copy: function() {
-		var result = new Tree(this.name);
+		var result = new Tree();
 		for (var i in Object.keys(this.content)) {
 			result.content.i = this.content.i.copy();
+		}
+		return result;
+	},
+	/** Copy a tree if it doesn't exist in a remote's objects, otherwise return the existing tree
+	 * @param {Map} obj_list a map of objects from a remote
+	 * @returns {Tree} A tree identical to this
+	 */
+	applyToRemote: function(obj_list) {
+		if(obj_list.has(this.hash)) {
+			return obj_list.get(this.hash);
+		} else {
+			var result = new Tree();
+			for(var i in this.content) {
+				result.content.i = this.content.i.applyToRemote(obj_list);
+			}
+			return result;
 		}
 	},
 	/** Adds a blob or tree to this tree's contents if a blob or tree with 
 	 * the input's hash doesn't exist.
+	 * @param {String} name the name to identify the content by
 	 * @param {Tree|Blob} input the Tree or Blob to be added to content
-	 * @throws an error if the arguments aren't a tree or blob
-	 * @returns {boolean} whether the Tree or Blob was added correctly
+	 * @throws an error if the name isn't a string
+	 * @throws an error if the input isn't a tree or blob
 	 */
-	add: function(input) {
+	add: function(name, input) {
+		if (typeof(name)!==String) {
+			throw new Error('name must be a string');
+		}
 		if (typeof(input)!==Blob && typeof(input)!==Tree) {
 			throw new Error('contents must be a blob or tree');
-		} else if(this.content.has(input.hash)) {
+		} else if(this.content.has(name)) {
 			throw new Error('content with this hash already exists');
 		} else {
-			this.content.set(input.hash, input);
+			this.content.set(name, input);
 		}
 	},
 	/** Removes a Blob or Tree from this tree's contents
 	 * @param {String} hash the hash of the Tree or Blob to be removed
-	 * @returns {boolean} whether the Tree or Blob was removed correctly
+	 * @throws an error if the hash is not a string
+	 * @throws an error if there's nothing with this hash in contents
 	 */
 	remove: function(hash) {
 		if (typeof(hash)!==String) {
@@ -159,9 +203,10 @@ Tree.prototype = {
 	 * @returns {string} hash of the object
 	 */
 	hash: function() {
-		var contentsHash = 'tree: '+this.name+' ';
-		for (var i in this.content.values()) {
-			contentsHash += i.hash();
+		var contentsHash = 'tree: ';
+		var keys = Array.from(this.content.keys()).sort();
+		for(var i=0; i<keys.length; i++) {
+			contentsHash += i+' '+this.content.get(i).hash+' ';
 		}
 		return sha1(contentsHash);
 	},
@@ -188,15 +233,15 @@ Tree.prototype = {
 };
 
 /** Commits point to their parent(s) along with their contents 
- * @param {string} name the name of the commit
+ * @param {string} message the name of the commit
  * @param {string} parent the parent commit that this commit will point to
  * @param {string} [secondary_merge_parent=null] a second parent commit if this
  * is a merge commit
  * @param {Date} [time=Date.now()] the time the commit was made
  * @returns {Commit} A commit with the specified features
  */
-function Commit(name, parent, secondary_merge_parent, time) {
-	Directory.call(this, name, parent);
+function Commit(message, parent, secondary_merge_parent, time) {
+	Directory.call(this, message, parent);
 	this.mergeParent = secondary_merge_parent;
 	this.creationTime = time || Date.now();
 }
@@ -212,6 +257,30 @@ Commit.prototype.copy = function() {
 	result.parent = this.parent.copy();
 	result.mergeParent = this.mergeParent.copy();
 };
+/** Copy a commit, but leave out its parent(s)
+ */
+Commit.prototype.copyContents = function() {
+	var result = new Commit(this.name, null, null, this.creationTime);
+	for (var i in Object.keys(this.content)) {
+		result.content.i = this.content.i.copy();
+	}
+	return result;
+};
+/** Copy a commit, using objects from a gitremote
+ * @param {Map} objects a map of hashes(strings) to objects
+ * @returns {Commit} A commit identical to this but pointing to trees and
+ * blobs that already exist
+ */
+Commit.prototype.applyToRemote = function(obj_list) {
+	if(obj_list.has(this.hash)) {
+		throw new Error('an object with this hash already exists');
+	}
+	var result = new Commit(this.name, null, null, this.creationTime);
+	for(var i in Object.keys(this.content)) {
+		result.content.i = this.content.i.applyToRemote(obj_list);
+	}
+	return result;
+};
 /** Return a hash of the blob using sha1.
  * @returns {string} hash of the object
  */
@@ -221,6 +290,22 @@ Commit.prototype.hash = function() {
 		contentsHash += i.hash();
 	}
 	return sha1(contentsHash);
+};
+/** Equality checks are based on the hash.
+ * @returns {boolean} whether the two hashes are equal
+ */
+Commit.prototype.equals = function(other) {
+	return this.hash === other.hash;
+};
+/** Are the two commits equal including their parents all the way
+ * until null
+ * @returns {boolean} whether the commits and ancestors are equivalent
+ */
+Commit.prototype.deepequals = function(other) {
+	if(this.equals(other)) {
+		return JSON.stringifiy(this) === JSON.stringify(other);
+	} else
+		return false;
 };
 
 /** Make a git remote consisting of a graph and git objects
@@ -237,17 +322,43 @@ function GitRemote(gitgraph, branch_tips) {
 }
 GitRemote.prototype = {
 	branches: new Map(),
+	objects: new Map(),
 	//TODO finish
 	/** Load in history from a commit, also can be used to update a branch
 	 * @param {Commit} head the commit to load history from
 	 * @param {string} branchname the name of the branch
-	 * @param {boolean} options.create load only if this branchname doesn't already exist
-	 * @param {boolean} options.update beep boop filler
+	 * @param {boolean} [options.create=false] load only if this branchname doesn't already exist
 	 */
 	loadhistoryFromCommit: function(head, branchname, options) {
-		result.head = head.copy();
-
-		this.branches.set(branchname, head);
+		function findCommonAncestor(commit) {
+			if(this.objects.has(commit.hash) && this.objects.get(commit.hash).deepequals(commit)) {
+				return this.objects.get(commit.hash);
+			}
+			return findCommonAncestor(commit.parent) || findCommonAncestor(commit.mergeParent);
+		}
+		function isAncestor(pot_ancestor, commit) {
+			if(commit.deepequals(pot_ancestor))
+				return true;
+			return isAncestor(pot_ancestor, commit.parent) || isAncestor(pot_ancestor, commit.mergeParent);
+		}
+		//Throw an error if creating a branch but it already exists
+		if(options.create) {
+			if(this.branches.has(branchname)) {
+				throw new Error("Cannot create new branch. Branch already exists with name: "+branchname);
+			}
+		}
+		//Fast forward
+		if(this.branches.has(branchname)) {
+			if(isAncestor(this.branches.get(branchname),head) && !this.branches.get(branchname).equals(head)) {
+				var tip = head.applyToRemote(this.objects);
+				var tmptip = head.parent;
+				while(!tmptip.equals(this.branches.get(branchname))) {
+					tmptip.applyToRemote(this.objects);
+					tmptip = tmptip.parent;
+				}
+				this.branches.set(branchname, tip);
+			}
+		}
 	},
 	/** Check if this remote contains a commit with the specified hash
 	 * @param {string} hash the hash of the commit in question
@@ -255,18 +366,8 @@ GitRemote.prototype = {
 	 * or undefined if nothing was found.
 	 */
 	hasCommit: function(hash) {
-		function searchCommit(commit, hash) {
-			if(commit instanceof Commit) {
-				if(commit.hash() === hash)
-					return commit;
-				if(commit.parent instanceof Commit)
-					return searchCommit(commit, hash);
-			}
-		}
-		for(var i in this.branches) {
-			var tmp = searchCommit(i, hash);
-			if(tmp !== undefined)
-				return tmp;
+		if(this.objects.has(hash)) {
+			return this.objects.get(hash);
 		}
 	}
 };
@@ -297,6 +398,9 @@ function GitFileSystem(fs_children, gitgraph) {
 	this.root.path = '/';
 	this.remotes = new Map();
 
+	this.modified_files = [];
+	this.staged_files = [];
+
 	if (fs_children !== undefined) {
 		buildfs(this.root, fs_children);
 	}
@@ -304,7 +408,7 @@ function GitFileSystem(fs_children, gitgraph) {
 GitFileSystem.prototype = Object.create(GitRemote.prototype);
 
 //TODO Fix me
-/** make a new remote with the given name
+/** make a new remote with the given name and optionally another remote to copy
  * @params {string} remote_name name of the remote in this GitFileSystem
  */
 GitFileSystem.prototype.newRemote = function(remote_name, old_remote) {
@@ -360,8 +464,34 @@ GitFileSystem.prototype.getChildNodes = function(node, callback) {
 	return callback(node.content.values());
 };
 
+GitFileSystem.prototype.getNodeFromPath = function(path) {
+	if(!path) {
+		return pathhandler.current;
+	}
+	var target = path[0]=='/'?this.root:pathhandler.current;
+	var splitpath = path.split('/');
+	for (var i in splitpath) {
+		if(i=='..') {
+			if(target.parent) {
+				target = target.parent;
+			} else {
+				return target;
+			}
+		} else if(i=='.') {
+			//do nothing
+		} else if(target.content.has(i)) {
+			target = target.content.get(i);
+		} else {
+			throw new Error('invalid path');
+		}
+	}
+	return target;
+};
+
 exports.File = File;
 exports.Directory = Directory;
 exports.Blob = Blob;
 exports.Tree = Tree;
 exports.Commit = Commit;
+exports.GitRemote = GitRemote;
+exports.GitFileSystem = GitFileSystem;

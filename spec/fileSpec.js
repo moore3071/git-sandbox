@@ -97,12 +97,12 @@ describe("Directory methods", function() {
 describe("blob methods", function() {
 
 	it("should construct correctly using a string", function() {
-		var b1  = new Fs.Blob('README.md');
+		var b1  = new Fs.Blob('test content');
 		expect(b1 instanceof Fs.Blob).toBe(true);
 	});
 
 	it("should not build with a non-string arg", function() {
-		var constructorError = "File name must be a string";
+		var constructorError = "Blobs can only be constructed with strings";
 		expect(function() {
 			new Fs.Blob(true);
 		}).toThrowError(constructorError);
@@ -125,35 +125,14 @@ describe("blob methods", function() {
 		var copy = b1.copy();
 		expect(b1).toEqual(copy);
 		expect(b1).not.toBe(copy);
-		b1.setContent('WTFPL (2017)');
-		expect(b1).not.toEqual(copy);
 	});
 });
 
 describe("tree methods", function() {
 
 	it("should construct correctly using a string", function() {
-		var b1  = new Fs.Tree('README.md');
+		var b1  = new Fs.Tree();
 		expect(b1 instanceof Fs.Tree).toBe(true);
-	});
-
-	it("should not build with a non-string arg", function() {
-		var constructorError = "File name must be a string";
-		expect(function() {
-			new Fs.Tree(true);
-		}).toThrowError(constructorError);
-		expect(function() {
-			new Fs.Tree([]);
-		}).toThrowError(constructorError);
-		expect(function() {
-			new Fs.Tree({});
-		}).toThrowError(constructorError);
-		expect(function() {
-			new Fs.Tree(3);
-		}).toThrowError(constructorError);
-		expect(function() {
-			new Fs.Tree(true);
-		}).toThrowError(constructorError);
 	});
 
 	//TODO: test add, remove, contains, and copy

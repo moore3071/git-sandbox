@@ -1,4 +1,8 @@
+
 var sha1 = require('sha1');
+
+(function(){
+'use strict';
 
 /** This file provides a fake file system for the git repositories. This
  * includes: normal files, directories, git blobs, git commits, and git trees. 
@@ -11,7 +15,7 @@ function File(name) {
 		throw new Error("File name must be a string");
 	}
 	this.name = name;
-	this.content = null;
+	this.content = undefined;
 }
 File.prototype = {
 	/** Set the content of a file to the input string
@@ -44,7 +48,7 @@ function Directory(name, parent_dir) {
 		throw new Error('Directory parent must be a directory');
 	}
 	this.name = name;
-	this.content = new Map();
+	this.content = {};
 }
 
 Directory.prototype = {
@@ -61,17 +65,17 @@ Directory.prototype = {
 			file = new File(file);
 		}
 		if (file instanceof Directory || file instanceof File) {
-			if (this.content.has(file.name)) {
+			if (this.content.hasOwnProperty(file.name)) {
 				throw new Error('A file with this name already exists');
 			} else {
-				this.content.set(file.name, file);
+				this.content[file.name] = file;
 			}
 		} else if(file instanceof Tree || file instanceof Blob || file instanceof Commit) {
 			//File names for blobs, commits, etc, are their hash
-			if (this.content.has(file.hash)) {
+			if (this.content.hasOwnProperty(file.hash)) {
 				throw new Error('A file with this hash already exists');
 			} else {
-				this.content.set(file.hash, file);
+				this.content[file.hash] = file;
 			}
 		} else {
 			throw new Error('Only files may be adding to directories');
@@ -82,12 +86,13 @@ Directory.prototype = {
 	 * @throws errors if the file_name doesn't exist in the dir contents
 	 */
 	remove: function(file_name) {
-		if (this.content.has(file_name)) {
-			this.content.delete(file_name);
+		if (this.content.hasOwnProperty(file_name)) {
+			delete this.content[file_name];
 		} else {
 			throw new Error('cannot remove a nonexisting file');
 		}
 	},
+	//TODO
 	/** Make a tree from this directory
 	 * @returns {Tree} A tree representing this directory
 	 */
@@ -103,11 +108,14 @@ Directory.prototype = {
  * @returns {Blob} A blob object with the specified content
  */
 function Blob(content) {
-	if(content!==undefined && typeof(content)!=='string') {
+	if(content===undefined) {
+		this.content = '';
+	} else if(typeof(content)!=='string') {
 		throw new Error("Blobs can only be constructed with strings");
+	} else {
+		this.content = content;
 	}
-	this.content = content;
-	this.hash();
+	this.hash = this.hash();
 }
 /** Copy a blob recursively so remotes don't interact with the blobs of others
  * @returns {Blob} A blob identical to this
@@ -120,8 +128,8 @@ Blob.prototype.copy = function() {
  * @returns {Blob} A Blob identical to this
  */
 Blob.prototype.applyToRemote = function(obj_list) {
-	if(obj_list.has(this.hash)) {
-		return obj_list.get(this.hash);
+	if(obj_list.hasOwnProperty(this.hash)) {
+		return obj_list[this.hash];
 	} else {
 		return this.copy();
 	}
@@ -138,7 +146,7 @@ Blob.prototype.hash = function() {
  * @returns {Tree} A new tree
  */
 function Tree() {
-	this.content = new Map();
+	this.content = {};
 }
 Tree.prototype = {
 	/** Copy a tree recursively so remotes don't interact with the trees of others
@@ -147,7 +155,8 @@ Tree.prototype = {
 	copy: function() {
 		var result = new Tree();
 		for (var i in Object.keys(this.content)) {
-			result.content.i = this.content.i.copy();
+			if(this.content.hasOwnProperty(i))
+				result.content[i] = this.content[i].copy();
 		}
 		return result;
 	},
@@ -156,8 +165,8 @@ Tree.prototype = {
 	 * @returns {Tree} A tree identical to this
 	 */
 	applyToRemote: function(obj_list) {
-		if(obj_list.has(this.hash)) {
-			return obj_list.get(this.hash);
+		if(obj_list.hasOwnProperty(this.hash)) {
+			return obj_list[this.hash];
 		} else {
 			var result = new Tree();
 			for(var i in this.content) {
@@ -174,15 +183,15 @@ Tree.prototype = {
 	 * @throws an error if the input isn't a tree or blob
 	 */
 	add: function(name, input) {
-		if (typeof(name)!==String) {
+		if (typeof(name)!=='string') {
 			throw new Error('name must be a string');
 		}
-		if (typeof(input)!==Blob && typeof(input)!==Tree) {
+		if (input instanceof Blob && input instanceof Tree) {
 			throw new Error('contents must be a blob or tree');
-		} else if(this.content.has(name)) {
+		} else if(this.content.hasOwnProperty(name)) {
 			throw new Error('content with this hash already exists');
 		} else {
-			this.content.set(name, input);
+			this.content[name] = input;
 		}
 	},
 	/** Removes a Blob or Tree from this tree's contents
@@ -193,10 +202,10 @@ Tree.prototype = {
 	remove: function(hash) {
 		if (typeof(hash)!==String) {
 			throw new Error('argument must be a string');
-		} else if(!this.content.has(hash)) {
+		} else if(!this.content.hasOwnProperty(hash)) {
 			throw new Error('no content with this hash to remove');
 		} else {
-			this.content.delete(hash);
+			delete this.content[hash];
 		}
 	},
 	/** Return a hash of the tree using sha1.
@@ -206,7 +215,7 @@ Tree.prototype = {
 		var contentsHash = 'tree: ';
 		var keys = Array.from(this.content.keys()).sort();
 		for(var i=0; i<keys.length; i++) {
-			contentsHash += i+' '+this.content.get(i).hash+' ';
+			contentsHash += i+' '+this.content[i].hash+' ';
 		}
 		return sha1(contentsHash);
 	},
@@ -216,13 +225,13 @@ Tree.prototype = {
 	 */
 	contains: function(hash) {
 		var tmp;
-		if(this.content.size()!==0) {
-			for(var i in this.content.values()) {
-				if(i.hash()===hash) {
-					return i;
+		for(var i in this.content) {
+			if(this.content.hasOwnProperty(i)) {
+				if(this.content[i].hash===hash) {
+					return this.content[i];
 				}
-				if(i instanceof Tree) {
-					tmp = i.contains(hash);
+				if(this.content[i] instanceof Tree) {
+					tmp = this.content[i].contains(hash);
 					if(tmp!==undefined) {
 						return tmp;
 					}
@@ -241,7 +250,8 @@ Tree.prototype = {
  * @returns {Commit} A commit with the specified features
  */
 function Commit(message, parent, secondary_merge_parent, time) {
-	Directory.call(this, message, parent);
+	this.message = message;
+	this.parent = parent;
 	this.mergeParent = secondary_merge_parent;
 	this.creationTime = time || Date.now();
 }
@@ -250,7 +260,7 @@ Commit.prototype = Object.create(Tree.prototype);
  * @returns {Commit} An identical commit to this
  */
 Commit.prototype.copy = function() {
-	var result = new Commit(this.name, this.parent, this.mergeParent, this.creationTime);
+	var result = new Commit(this.message, this.parent, this.mergeParent, this.creationTime);
 	for (var i in Object.keys(this.content)) {
 		result.content.i = this.content.i.copy();
 	}
@@ -272,7 +282,7 @@ Commit.prototype.copyContents = function() {
  * blobs that already exist
  */
 Commit.prototype.applyToRemote = function(obj_list) {
-	if(obj_list.has(this.hash)) {
+	if(obj_list.hasOwnProperty(this.hash)) {
 		throw new Error('an object with this hash already exists');
 	}
 	var result = new Commit(this.name, null, null, this.creationTime);
@@ -321,8 +331,8 @@ function GitRemote(gitgraph, branch_tips) {
 	}
 }
 GitRemote.prototype = {
-	branches: new Map(),
-	objects: new Map(),
+	branches: {},
+	objects: {},
 	//TODO finish
 	/** Load in history from a commit, also can be used to update a branch
 	 * @param {Commit} head the commit to load history from
@@ -330,33 +340,33 @@ GitRemote.prototype = {
 	 * @param {boolean} [options.create=false] load only if this branchname doesn't already exist
 	 */
 	loadhistoryFromCommit: function(head, branchname, options) {
-		function findCommonAncestor(commit) {
-			if(this.objects.has(commit.hash) && this.objects.get(commit.hash).deepequals(commit)) {
-				return this.objects.get(commit.hash);
+		function findCommonAncestor(remote, commit) {
+			if(remote.objects.hasOwnProperty(commit.hash) && remote.objects[commit.hash].deepequals(commit)) {
+				return remote.objects[commit.hash];
 			}
-			return findCommonAncestor(commit.parent) || findCommonAncestor(commit.mergeParent);
+			return findCommonAncestor(remote, commit.parent) || findCommonAncestor(remote, commit.mergeParent);
 		}
-		function isAncestor(pot_ancestor, commit) {
+		function isAncestor(remote, pot_ancestor, commit) {
 			if(commit.deepequals(pot_ancestor))
 				return true;
-			return isAncestor(pot_ancestor, commit.parent) || isAncestor(pot_ancestor, commit.mergeParent);
+			return isAncestor(remote, pot_ancestor, commit.parent) || isAncestor(remote, pot_ancestor, commit.mergeParent);
 		}
 		//Throw an error if creating a branch but it already exists
 		if(options.create) {
-			if(this.branches.has(branchname)) {
+			if(this.branches.hasOwnProperty(branchname)) {
 				throw new Error("Cannot create new branch. Branch already exists with name: "+branchname);
 			}
 		}
 		//Fast forward
-		if(this.branches.has(branchname)) {
-			if(isAncestor(this.branches.get(branchname),head) && !this.branches.get(branchname).equals(head)) {
+		if(this.branches.hasOwnProperty(branchname)) {
+			if(isAncestor(this, this.branches.branchname,head) && !this.branches[branchname].equals(head)) {
 				var tip = head.applyToRemote(this.objects);
 				var tmptip = head.parent;
-				while(!tmptip.equals(this.branches.get(branchname))) {
+				while(!tmptip.equals(this.branches.branchname)) {
 					tmptip.applyToRemote(this.objects);
 					tmptip = tmptip.parent;
 				}
-				this.branches.set(branchname, tip);
+				this.branches[branchname] = tip;
 			}
 		}
 	},
@@ -366,8 +376,8 @@ GitRemote.prototype = {
 	 * or undefined if nothing was found.
 	 */
 	hasCommit: function(hash) {
-		if(this.objects.has(hash)) {
-			return this.objects.get(hash);
+		if(this.objects.hasOwnProperty(hash)) {
+			return this.objects.hash;
 		}
 	}
 };
@@ -396,7 +406,7 @@ function GitFileSystem(fs_children, gitgraph) {
 
 	this.root = new Directory('');
 	this.root.path = '/';
-	this.remotes = new Map();
+	this.remotes = {};
 
 	this.modified_files = [];
 	this.staged_files = [];
@@ -450,8 +460,8 @@ GitFileSystem.prototype.getNode = function(path, callback) {
 			}
 		} else if(i=='.') {
 			//do nothing
-		} else if(target.content.has(i)) {
-			target = target.content.get(i);
+		} else if(target.content.hasOwnProperty(i)) {
+			target = target.content[i];
 		} else {
 			return callback();
 		}
@@ -479,8 +489,8 @@ GitFileSystem.prototype.getNodeFromPath = function(path) {
 			}
 		} else if(i=='.') {
 			//do nothing
-		} else if(target.content.has(i)) {
-			target = target.content.get(i);
+		} else if(target.content.hasOwnProperty(i)) {
+			target = target.content.i;
 		} else {
 			throw new Error('invalid path');
 		}
@@ -495,3 +505,5 @@ exports.Tree = Tree;
 exports.Commit = Commit;
 exports.GitRemote = GitRemote;
 exports.GitFileSystem = GitFileSystem;
+
+})();

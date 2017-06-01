@@ -23,11 +23,22 @@ describe("File methods", function() {
 		expect(file.content).toBe(contentString);
 	});
 
+	it("Should turn into a valid blob that is dependent on content", function() {
+		var file = new Fs.File('tmp');
+		var b1 = file.makeBlob();
+		var b2 = file.makeBlob();
+		file.setContent("test");
+		var b3 = file.makeBlob();
+
+		expect(b1).toEqual(b2);
+		expect(b1).not.toEqual(b3);
+	});
+
 	it("the developer should be aware that testing is a thing and needs to"
 	   + " be updated when the code is updated (this is mainly a note"
 	   + " for myself and not a slant against other developers)", function() {
 		var file = new Fs.File('tmp');
-		expect(file).toEqual({ name: 'tmp', content: null});
+		expect(file).toEqual({ name: 'tmp', content: undefined});
 	});
 });
 
@@ -74,21 +85,21 @@ describe("Directory methods", function() {
 		dir.add(dir2)
 		dir2.add(file2)
 
-		expect(dir.content.get('tmp')).toBe(file1);
-		expect(dir.content.get('home')).toBe(dir2);
-		expect(dir.content.get('home').content.get('confidential')).toBe(file2);
+		expect(dir.content['tmp']).toBe(file1);
+		expect(dir.content['home']).toBe(dir2);
+		expect(dir.content['home'].content['confidential']).toBe(file2);
 		expect(function() {
 			dir2.add(file2)
 		}).toThrowError('A file with this name already exists');
 
-		expect( dir.content.get('tmp') ).toBe(file1);
+		expect( dir.content['tmp'] ).toBe(file1);
 
 		dir.remove('tmp');
 		expect(function() {
 			dir.remove('tmp')
 		}).toThrowError('cannot remove a nonexisting file');
 
-		expect(dir.content.get('tmp')).toBe(undefined);
+		expect(dir.content['tmp']).toBe(undefined);
 
 		dir.remove('home');
 	});
@@ -99,6 +110,11 @@ describe("blob methods", function() {
 	it("should construct correctly using a string", function() {
 		var b1  = new Fs.Blob('test content');
 		expect(b1 instanceof Fs.Blob).toBe(true);
+		var b2 = new Fs.Blob('');
+		var b3 = new Fs.Blob();
+		expect(b2).toEqual(b3);
+		expect(b2).not.toEqual(b1);
+		expect(b2.hash).not.toEqual(undefined);
 	});
 
 	it("should not build with a non-string arg", function() {
@@ -126,6 +142,7 @@ describe("blob methods", function() {
 		expect(b1).toEqual(copy);
 		expect(b1).not.toBe(copy);
 	});
+	//Apply to remote will be tested in git remote
 });
 
 describe("tree methods", function() {
@@ -135,8 +152,21 @@ describe("tree methods", function() {
 		expect(b1 instanceof Fs.Tree).toBe(true);
 	});
 
-	//TODO: test add, remove, contains, and copy
+	//TODO: test remove
 
+	it("should create an identical tree when copied", function() {
+		var t1 = new Fs.Tree();
+		var t2 = t1.copy();
+		var b1 = new Fs.Blob('test');
+		t1.add('tmp', b1);
+		var t3 = t1.copy();
+
+		expect(t1.contains(b1.hash)).toBeTruthy();
+		expect(t2.contains(b1.hash)).not.toBeTruthy();
+		expect(t2).toEqual(t3);
+		expect(t2).not.toBe(t3);
+		expect(t1).not.toEqual(t2);
+	});
 });
 
 describe("commit methods", function() {

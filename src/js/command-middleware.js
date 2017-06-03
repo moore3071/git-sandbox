@@ -1,4 +1,5 @@
 var shell = Josh.Shell();
+var Fs = require('./filesystem');
 
 shell.setCommandHandler("edit", {
 	exec: function(cmd, args, callback) {
@@ -42,7 +43,28 @@ shell.setCommandHandler("git", {
 });
 
 function git_init(args, callback) {
-
+	var result, silent = false;
+	//Catch the quiet flag(s) #yes, git init lets you use it multiple times
+	if(args.includes('--quiet') || args.includes('-q')) {
+		silent = true;
+		while(args.includes('--quiet')) { 
+			args.splice(args.indexOf('--quiet'),1);
+		}
+		while(args.includes('-q')) {
+			args.splice(args.indexOf('-q'),1);
+		}
+	}
+	try {
+		result = filler();//Call the function here
+	} catch(e) {
+		callback(e.message);
+		return;
+	}
+	if(silent) {
+		callback();
+	} else {
+		callback(result);
+	}
 }
 function git_add(args, callback) {
 
@@ -84,13 +106,23 @@ function git_status(args, callback) {
 
 }
 function git_remote(args, callback) {
+	if(!args) {
+		
+	} else if(args[0]==='add') {
 
+	} else if(args[0]==='rename') {
+
+	} else if(args[0]==='remove') {
+
+	} else {
+
+	}
 }
 function git_version(args, callback) {
 	callback('Based off of Git 2.13.0, but very simplified');
 }
 function git_help(command, args, callback) {
-	//TODO add data instead of relying solely on git-scm
+	//FIXME add data instead of relying solely on git-scm
 	switch(command) {
 		case 'init': callback("https://git-scm.com/docs/git-init"); break;
 		case 'add': callback("https://git-scm.com/docs/git-add"); break;

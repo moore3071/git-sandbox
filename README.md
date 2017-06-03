@@ -1,5 +1,7 @@
 # Git Sandbox
 
+[![Build Status](https://travis-ci.org/moore3071/git-sandbox.svg?branch=master)](https://travis-ci.org/moore3071/git-sandbox)
+
 A simplified sandbox environment for learning Git hopefully with lessons later.
 
 ## Dependencies

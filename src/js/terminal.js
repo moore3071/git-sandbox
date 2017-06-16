@@ -27,7 +27,18 @@ shell.setCommandHandler("ls", {
 		callback(response);
 	},
 	completion: function(cmd, arg, line, callback) {
+		console.log(shell.bestMatch(arg, ['bin', 'boot', 'usr', 'home', 'tmp']));
 		callback(shell.bestMatch(arg, ['bin', 'boot', 'usr', 'home', 'tmp']));
+	}
+});
+
+shell.setCommandHandler("args", {
+	exec: function(cmd, args, callback) {
+		callback(args.toString());
+	},
+	completion: function(cmd, arg, line, callback) {
+		console.log('cmd: '+cmd+' arg: '+arg+' line: '+line);
+		callback({completion: 'mein leiben', suggestions: []});
 	}
 });
 

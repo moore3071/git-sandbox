@@ -174,8 +174,8 @@ describe("tree methods", function() {
 		t1.add('tmp', b1);
 		var t3 = t1.copy();
 
-		expect(t1.contains(b1.hash)).toBeTruthy();
-		expect(t2.contains(b1.hash)).not.toBeTruthy();
+		expect(t1.contains('tmp')).toBeTruthy();
+		expect(t2.contains('tmp')).not.toBeTruthy();
 		expect(t2).not.toEqual(t3);
 		expect(t2).not.toBe(t3);
 		expect(t1).not.toEqual(t2);

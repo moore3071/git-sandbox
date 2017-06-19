@@ -8,6 +8,10 @@ html, body {
   background-color: #ddd;
 }
 
+#GitObjects, #Remotes {
+  display: none;
+}
+
 div.container{
   display:flex;
   min-width: 600px;

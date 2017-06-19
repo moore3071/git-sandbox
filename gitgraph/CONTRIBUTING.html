@@ -1,0 +1,56 @@
+<h1>Contributing to gitgraph.js</h1><p>Glad to hear you&#39;d like to help us improving the library. Here&#39;s the how-to!</p>
+<h2>Wanna report an issue / ask for a feature?</h2><p>Sounds nice! Please proceed as following:</p>
+<ol>
+<li><strong>Search for existing issues.</strong> Sometimes, other folks may have reported the
+same issue and it&#39;d be nice not to duplicate them.</li>
+<li>If possible, please <strong>create an isolated and reproducible test case.</strong> Make
+use of <a href="jsfiddle.net">jsFiddle</a> - for instance - to share your isolated test
+cases. We won&#39;t hold it against you for feature requests, but a live <a href="http://en.wikipedia.org/wiki/Proof_of_concept">POC</a>
+is sometimes easier to catch.</li>
+</ol>
+<ol>
+<li><strong>Share as much information as possible.</strong> Include browser and version,
+version of gitgraph.js, etc. where appropriate. That can help us to reproduce
+the bug, if so.</li>
+</ol>
+<h2>Or wanna contribute to the code?</h2><p>Github&#39;s Pull Request is a fantastic tool to contribute to the code.</p>
+<p>Just keep in mind the following rules:</p>
+<ul>
+<li>Change must be done in <code>src/</code> files, eventually <code>test/</code> or <code>examples/</code>, that&#39;s
+all.</li>
+<li>You&#39;d be nice not to pollute your pull request with unintended changes.</li>
+<li>Pull requests should always be against the <code>develop</code> branch, never against
+<code>master</code> nor <code>gh-pages</code>.</li>
+</ul>
+<p>Once you send a Pull Request, your code will be checked with <a href="https://travis-ci.org/nicoespeon/gitgraph.js">Travis CI</a> to
+tell whether you break the build or not. The Travis test should pass before we
+accept any Pull Request.</p>
+<h2>Check about our coding standards</h2><p>Please follow our coding standards as best as you can to keep consistency over
+code.</p>
+<p>The <a href="https://github.com/nicoespeon/gitgraph.js/blob/develop/.editorconfig">.editorconfig</a> file should help you configure your IDE to do so.</p>
+<h3>JS</h3><ul>
+<li>2 spaces indent (no tabs)</li>
+<li>Use semicolons</li>
+<li>Use strict mode</li>
+<li>Strings must use double-quote</li>
+</ul>
+<h3>CSS</h3><ul>
+<li>Adhere to the (default) <a href="http://csscomb.com/">CSScomb</a> property order</li>
+<li>Multiple-line approach (one property and value per line)</li>
+<li>Always a space after a property&#39;s colon (.e.g, <code>display: block;</code> and not
+<code>display:block;</code>)</li>
+<li>End all lines with a semi-colon</li>
+<li>For multiple, comma-separated selectors, place each selector on its own line</li>
+<li>Attribute selectors, like <code>input[type=&quot;text&quot;]</code>, should always wrap the
+attribute&#39;s value in double quotes, for consistency and safety (see <a href="http://mathiasbynens.be/notes/unquoted-attribute-values">this blog
+post on unquoted attribute values</a> that can lead to XSS attacks).</li>
+</ul>
+<h3>HTML</h3><ul>
+<li>Two spaces for indentation, never tabs</li>
+<li>Double quotes only, never single quotes</li>
+<li>Always use proper indentation</li>
+<li>Use tags and elements valid for an HTML5 doctype</li>
+</ul>
+<h2>License</h2><p>By contributing your code, you agree to license your contribution under the
+terms of the <a href="https://github.com/nicoespeon/gitgraph.js/blob/master/LICENSE.md">MIT license</a></p>
+<p><a href="http://choosealicense.com/licenses/mit/">&gt; What does that mean?</a></p>

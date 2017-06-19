@@ -24,53 +24,81 @@ html
     link(href="/css/gitgraph.css", rel="stylesheet")
 
   body
+    div.container
+      //Yield should be purely JS containing the repo info
+      != yield
 
-    //Yield should be purely JS containing the repo info
-    != yield
+      //Filled by JS based on settings, why not use the notifications
+      //web api? permissions and not needed when the user isn't on
+      //the page.
+      div#notification
 
-    //Filled by JS based on settings
-    div#notification
+      div#Left
+        div
+          div#header
+            h1 Git-Sandbox
 
-    //Should allow navigating to any
-    //other page
-    div#navigation
+            //Contain the settings
+            details#settings
+              summary settings
+              div
+                details
+                  summary Notifications
+                  div.setting-container
+                    input(type="checkbox")
+                    | Notifications
+                  div.setting-container
+                    input(type="checkbox")
+                    | Object creation
+                  div.setting-container
+                    input(type="checkbox")
+                    | Merge conflicts
+                  div.setting-container
+                    input(type="checkbox")
+                    | Remote changes
+                  div.setting-container
+                    input(type="checkbox")
+                    | errors
+                details
+                  summary Setup
+                  div.setting-container
+                    input(type="checkbox")
+                    | multiple remotes
+            select#snippet
+              option what is git
+              option remotes
+              option git objects: trees, blobs, commits
 
-    //Contain the settings
-    div#settings
-      h3 settings
-      details
-        summary Notifications
-        div.setting-container
-          input(type="checkbox")
-          | Notifications
-        div.setting-container
-          input(type="checkbox")
-          | Object creation
-        div.setting-container
-          input(type="checkbox")
-          | Merge conflicts
-        div.setting-container
-          input(type="checkbox")
-          | Remote changes
-        div.setting-container
-          input(type="checkbox")
-          | errors
-      details
-        summary Setup
-        div.setting-container
-          input(type="checkbox")
-          | multiple remotes
+          //Text area
+          div#info
+            h2 What is Git
+            p Git is a version control system(vcs). In simple terms it let's you share code with others without passing a flashdrive back and forth. Benefits of Git include:
+              ul
+                li Easily see changes and figure out where conflicting changes happenned.
+                li Don't rely on a central server. With Git everyone has a copy of the code and its history.
+                li Make the changes you want and branch off into a new feature or even a new project(forking)
+                li A robust community of developers who have helped to put 95% of the questions you'll ask on Stack Overflow
+            | While Git is an awesome tool, it can be hard to understand when you're just starting out. Git Sandbox is here to help you understand Git with an interactive and visual tool along with links to other great Git resources.
 
-    //TODO change to dynamically load
-    //the remotes from JSON
-    canvas#gitGraph
-    canvas#localGraph
+          //terminal divs
+          div#shell-panel
+            div#shell-view
 
-    //terminal divs
-    div#shell-panel
-      div#shell-view
 
-    //Make the terminal with josh.js
-    script(src="/js/terminal.js")
-    //Make the necessary instances of gitgraphs
-    script(src="/js/graph.js")
+      div#Right
+        div
+          //TODO change to dynamically load
+          //the remotes from JSON
+          div#graphs
+            h2 Graphs of remotes
+            div.remote
+              h2 Local git graph
+              canvas#gitGraph
+            div.remote
+              h2 Graph of remote: origin
+              canvas#localGraph
+
+      //Make the terminal with josh.js
+      script(src="/js/terminal.js")
+      //Make the necessary instances of gitgraphs
+      script(src="/js/graph.js")

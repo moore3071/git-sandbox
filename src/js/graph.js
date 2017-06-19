@@ -19,3 +19,5 @@ var local_newfeature = local.branch("newfeature");
 local_newfeature.commit({sha1:"a325be1"}).commit({sha1: "ab83cce"});
 
 local_master.commit({sha1:"23ce2b4"});
+
+local.commit().commit().commit().commit().commit().commit().commit().commit().commit().commit();

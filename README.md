@@ -30,7 +30,11 @@ npm install
 
 ## Running
 
-In order to run cd into `src` and then run 
+In order to run as a server run `npm run server`. In addition the site can be built with `npm run build`.
+
+### Running tests
+
+In order to run Jshint and Jasmine unit tests, run `npm test`.
 
 ## FAQ (Frequently Anticipated Questions)
 

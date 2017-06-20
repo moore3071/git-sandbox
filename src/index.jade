@@ -64,6 +64,8 @@ html
               option(value='whatIsGit') what is git
               option(value='Remotes') remotes
               option(value='GitObjects') git objects: trees, blobs, commits
+              option(value='YourComputer') What's tracked on your computer?
+              option(value='ExtraResources') Extra resources on Git
 
           //Text area
           div#info
@@ -76,17 +78,27 @@ html
                   li Make the changes you want and branch off into a new feature or even a new project(forking)
                   li A robust community of developers who have helped to put 95% of the questions you'll ask on Stack Overflow
               | While Git is an awesome tool, it can be hard to understand when you're just starting out. Git Sandbox is here to help you understand Git with an interactive and visual tool along with links to other great Git resources.
-            div#Remotes
+            div#Remotes.snippet
               h2 Remotes and how you interact with them
               p Remotes are a very important part of Git if you want to interact with others. Git can work without access to these remotes, and is NOT accessing remotes normally. Changes that happen on remotes are generally accessed via 'git-fetch' or git-pull' and changes can be applied to a remote with 'git-push'. Note that you might not have access to change a remote. In these cases you'll typically make a #[a(href="https://help.github.com/articles/about-pull-requests/") Pull Request] so others can add your changes to the remote.
               p To view what remotes your repo has you can run 'git remote' or 'git remote --verbose' if you want to see the path or url to the remote.
-            div#GitObjects
+            div#GitObjects.snippet
               h2 Git Objects: blobs, trees, and commits
               p For those that want to understand the inner workings of Git there is a brief explanation of blobs, trees, and commits here. If you're content with Git being a blackbox, then feel free to skip this section.
               p Git objects are stored in '.git/objects'. The names are a mix of 40 characters, 0-9,a-f. These are the sha-1 hashes of the different objects. Don't worry about collisions too much though as there 16^40 unique hashes, and even in the largest repos objects can be identified by the first 12 characters of their hash. Did I mention that when you do need to reference an object you don't need to use the whole hash? Git will figure out the desired object given a unique starting substring so don't worry about typing 40 odd characters only to get an error when you press enter.
               p Blobs, the content of the files. Git acts differently than older VCS by tracking the content of the files separately from files. Blobs are a binary version of a file's contents with the name of this file being the hash of the file contents.
               p Trees, the structure. Trees are the directories of Git objects. They provide the names of files and directories inside the repo and the contents via a blob or tree of that file or directory respectively.
               p Commits, the history of what's occurred. Commits point to trees (the root of the git repo), but are also responsible for storing the time they were created, who made them, and other metadata. All of these factors come into play when creating the ID of a commit, meaning that no two commits should have the same hash.
+            div#YourComputer.snippet
+              h2 What's on your computer
+              p There are three components to keep track of on your computer. The first is the local repository and current commit (or HEAD). This is the last saved state of the tracked files; a moment frozen in time. This is not the same as the current state of the filesystem. The current state of the filesystem is known as the working tree. //TODO talk about index/staging area
+            div#ExtraResources.snippet
+              h2 Resources for learning Git!
+              ul
+                li #[a(href="https://jwiegley.github.io/git-from-the-bottom-up/") Git from the Bottom Up] is a great resource if you learn best from building blocks rather than black boxes. Git from the Bottom Up will take you through the plumbing commands of Git and start you out making blobs and then trees and working up from there.
+                li #[a(href="https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control") Pro Git Book] is currently on the second edition. It goes into detail about how to customize Git and even has a chapter on using GitHub. If you learn best by starting with the big picture then this resource acts as a good Yin to the Yang of Git from the Bottom Up.
+                li The man pages accessed in the terminal with 'man git <command>'. For those more familiar with Emacs, info can be used to access the same pages with Emacs bindings 'info git <command>'.
+                li #[a(href="https://git-scm.com/docs") Git Documentation] is a webpage version of the man pages for those who aren't fans of the terminal.
 
           //terminal divs
           div#shell-panel

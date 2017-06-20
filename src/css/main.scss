@@ -8,7 +8,7 @@ html, body {
   background-color: #ddd;
 }
 
-#GitObjects, #Remotes {
+.snippet {
   display: none;
 }
 
@@ -27,8 +27,8 @@ div.container{
   height: 100%;
 }
 
-#Right {
-  border-left: 1px solid black;
+#Left {
+  border-right: 1px solid black;
 }
 
 #Left > div, #Right > div {
@@ -91,6 +91,7 @@ h1{
   border: 1px solid #bbb;
   margin: auto;
   margin-top: 2em;
+  padding: 1em;
 }
 
 #graphs {
